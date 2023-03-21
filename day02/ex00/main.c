@@ -4,7 +4,6 @@
 
 ISR(INT0_vect) 
 {
-
     PORTB ^= (1 << PB0);
     _delay_ms(20);
     EIFR |= (1 << INTF0);
