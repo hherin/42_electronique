@@ -7,10 +7,9 @@
 #define USR_FLAG 0x01
 #define FAIL_FLAG 0x04
 
-char usrname[7] = "hherin";
-char password[12] = "hherin";
-static char int_usrn[50];
-static char int_psw[50];
+char usrname[] = "hherin";
+char password[] = "hherin";
+char buf[50];
 
 volatile uint8_t flags = USR_FLAG | PW_FLAG;
 
@@ -49,6 +48,14 @@ uint8_t ft_strncmp(char *c1, char *c2, uint8_t size)
     return (uint8_t)(!c1[i] && !c2[i]) ? 0 : FAIL_FLAG;
 }
 
+void memclean(void)
+{
+    uint8_t i = 0;
+    while (i < 50)
+        buf[i++] = 0;
+}
+
+
 ISR(USART_RX_vect)
 {
     unsigned char c = UDR0;
@@ -58,26 +65,28 @@ ISR(USART_RX_vect)
     {
         if (flags & USR_FLAG)
         {
-            flags |= ft_strncmp(int_usrn, usrname, i + 1);
+            flags |= ft_strncmp(buf, usrname, i + 1);
             flags &= ~USR_FLAG;
             uart_printstr("\r\n\tpassword: ");
+            memclean();
         }
         else if (flags & PW_FLAG)
         {
-            flags |= ft_strncmp(int_psw, password, i + 1);
+            flags |= ft_strncmp(buf, password, i + 1);
             flags &= ~PW_FLAG;
         }
         i = 0;
     }
+    else if (c == 127)
+    {
+        buf[--i] = 0;
+        uart_printstr("\b \b");
+    }
     else if (i < 50)
     {
-        if (flags & USR_FLAG)
-            int_usrn[i++] = c;
-        else
-        {
-            int_psw[i++] = c;
+        buf[i++] = c;
+        if (flags & PW_FLAG)
             c = '*';
-        }
         uart_tx(c);
     }
 }
@@ -88,7 +97,6 @@ int main(void)
 
     while(1)
     {
-        
         uart_printstr("Enter your login\r\n\tusername: ");
 
         while (flags & PW_FLAG){}
@@ -96,16 +104,15 @@ int main(void)
         if (flags & FAIL_FLAG)
         {
             uart_printstr("\r\nBad combinaison username/password\r\n\r\n");
-            flags = USR_FLAG | PW_FLAG;
+            /* clean username and password input buffers */
+            memclean();
         }
         else
         {
-            uart_printstr("\r\nHello ");
-            uart_printstr(usrname);
-            uart_printstr("!\r\nShall we play a game?\r\n");
-            flags = USR_FLAG | PW_FLAG;
+            uart_printstr("\r\nHello hherin!\r\nShall we play a game?\r\n");
             return 0;
         }
+        flags = USR_FLAG | PW_FLAG;
     }
     return 0;
 }
