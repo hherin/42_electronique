@@ -13,7 +13,7 @@ char buf[50];
 
 volatile uint8_t flags = USR_FLAG | PW_FLAG;
 
-void uart_init()
+static inline void uart_init()
 {
     uint32_t f = ((F_CPU)/ (UART_BAUDRATE * 16));
     /*Set baud rate */
@@ -26,7 +26,7 @@ void uart_init()
     sei();
 }
 
-void uart_tx(char c)
+static inline void uart_tx(char c)
 {
     /* Wait for empty transmit buffer */
     while ( !( UCSR0A & (1 << UDRE0)) );
@@ -34,7 +34,7 @@ void uart_tx(char c)
     UDR0 = (int)c;
 }
 
-void uart_printstr(const char* str)
+static inline void uart_printstr(const char* str)
 {
     while (*str)
         uart_tx(*str++);
@@ -48,7 +48,7 @@ uint8_t ft_strncmp(char *c1, char *c2, uint8_t size)
     return (uint8_t)(!c1[i] && !c2[i]) ? 0 : FAIL_FLAG;
 }
 
-void memclean(void)
+static inline void memclean(void)
 {
     uint8_t i = 0;
     while (i < 50)
@@ -61,7 +61,7 @@ ISR(USART_RX_vect)
     unsigned char c = UDR0;
     static uint8_t i = 0;
     
-    if (c == '\r')
+    if (c == '\r')  /* case new line */
     {
         if (flags & USR_FLAG)
         {
@@ -77,12 +77,12 @@ ISR(USART_RX_vect)
         }
         i = 0;
     }
-    else if (c == 127)
+    else if (c == 127) /* case character deleted */
     {
         buf[--i] = 0;
         uart_printstr("\b \b");
     }
-    else if (i < 50)
+    else if (i < 50) /* case user input */
     {
         buf[i++] = c;
         if (flags & PW_FLAG)
