@@ -17,8 +17,8 @@ void i2c_start(void)
     while (!(TWCR & (1<<TWINT)));
     uart_printnb(TWSR);
     uart_printstr("\r\nconfigure in writing mode: ");
-    /* load SLAW */
-    TWDR = (0x38 << 1)| 1;
+    /* load SLA_W */
+    TWDR = (0x38 << 1);
     TWCR = (1 << TWINT) | (1 << TWEN);
     while (!(TWCR & (1 << TWINT)));
     uart_printnb(TWSR);
